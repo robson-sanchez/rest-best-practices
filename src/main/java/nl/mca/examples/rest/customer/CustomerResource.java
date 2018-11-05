@@ -14,7 +14,7 @@ public class CustomerResource {
         this.customerService = customerService;
     }
 
-    @GetMapping("/customers")
+    @GetMapping("/v1/customers")
     public ResponseEntity<Collection<Customer>> listCustomers() {
         Collection<Customer> customers = customerService.list(0, Integer.MAX_VALUE);
 
@@ -25,23 +25,23 @@ public class CustomerResource {
         return ResponseEntity.ok(customers);
     }
 
-    @PostMapping("/customers")
+    @PostMapping("/v1/customers")
     public ResponseEntity<Customer> createCustomer(@RequestBody Customer customer) {
         return ResponseEntity.ok(customerService.create(customer));
     }
 
-    @GetMapping("/customers/{id}")
+    @GetMapping("/v1/customers/{id}")
     public ResponseEntity<Customer> findCustomer(@PathVariable("id") Long pk) {
         return ResponseEntity.ok(customerService.find(pk));
     }
 
-    @PutMapping("/customers/{id}")
+    @PutMapping("/v1/customers/{id}")
     public ResponseEntity<Customer> updateCustomer(@PathVariable("id") Long pk, @RequestBody Customer customer) {
         customer.setPk(pk);
         return ResponseEntity.ok(customerService.update(customer));
     }
 
-    @PatchMapping("/customers/{id}")
+    @PatchMapping("/v1/customers/{id}")
     public ResponseEntity<Customer> updateCustomerPartially(@PathVariable("id") Long pk, @RequestBody Customer customer) {
         Customer existingCustomer = customerService.find(pk);
         existingCustomer.setPk(pk);
@@ -65,7 +65,7 @@ public class CustomerResource {
         return ResponseEntity.ok(customerService.update(existingCustomer));
     }
 
-    @DeleteMapping("/customers/{id}")
+    @DeleteMapping("/v1/customers/{id}")
     public ResponseEntity<Void> deleteCustomer(@PathVariable("id") Long pk) {
         customerService.delete(pk);
         return ResponseEntity.ok().build();

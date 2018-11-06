@@ -1,5 +1,7 @@
 package nl.mca.examples.rest.customer;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,15 +16,22 @@ public class CustomerResource {
         this.customerService = customerService;
     }
 
-    @GetMapping("/v1/customers")
-    public ResponseEntity<Collection<Customer>> listCustomers() {
-        Collection<Customer> customers = customerService.list(0, Integer.MAX_VALUE);
+    @GetMapping(value = "/v1/customers")
+    public ResponseEntity<Collection<Customer>> listCustomers(
+            @RequestParam(value = "offset", required = false, defaultValue = "0") int offset,
+            @RequestParam(value = "limit", required = false, defaultValue = "30") int limit) {
+        Collection<Customer> customers = customerService.list(offset, limit);
 
         if (customers.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
 
-        return ResponseEntity.ok(customers);
+
+        String totalRecords = String.valueOf(customers.stream().count());
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .header("X-Total-Count", totalRecords)
+                .body(customers);
     }
 
     @PostMapping("/v1/customers")

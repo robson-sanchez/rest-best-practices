@@ -1,14 +1,15 @@
 package nl.mca.examples.rest.customer;
 
-import org.springframework.http.HttpHeaders;
+import nl.mca.examples.rest.BaseResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collection;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
-public class CustomerResource {
+public class CustomerResource extends BaseResource {
 
     private final CustomerService customerService;
 
@@ -19,19 +20,32 @@ public class CustomerResource {
     @GetMapping(value = "/v1/customers")
     public ResponseEntity<Collection<Customer>> listCustomers(
             @RequestParam(value = "offset", required = false, defaultValue = "0") int offset,
-            @RequestParam(value = "limit", required = false, defaultValue = "30") int limit) {
+            @RequestParam(value = "limit", required = false, defaultValue = "30") int limit,
+            @RequestParam(value = "fields", required = false) String fields) {
         Collection<Customer> customers = customerService.list(offset, limit);
 
         if (customers.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
 
-
         String totalRecords = String.valueOf(customers.stream().count());
 
-        return ResponseEntity.status(HttpStatus.OK)
-                .header("X-Total-Count", totalRecords)
-                .body(customers);
+        ResponseEntity.BodyBuilder builder = ResponseEntity.status(HttpStatus.OK)
+                .header("X-Total-Count", totalRecords);
+
+        if (fields != null) {
+            List<String> mandatoryFields = Arrays.asList(fields.split(","));
+
+            List<Customer> result = customers
+                    .stream()
+                    .map(customer -> partialResponse(customer, mandatoryFields))
+                    .collect(Collectors.toList());
+
+            return builder.body(result);
+        } else {
+            return builder.body(customers);
+        }
+
     }
 
     @PostMapping("/v1/customers")
@@ -40,8 +54,12 @@ public class CustomerResource {
     }
 
     @GetMapping("/v1/customers/{id}")
-    public ResponseEntity<Customer> findCustomer(@PathVariable("id") Long pk) {
-        return ResponseEntity.ok(customerService.find(pk));
+    public ResponseEntity<Customer> findCustomer(@PathVariable("id") Long pk,
+        @RequestParam(value = "fields", required = false) String fields) {
+        Customer customer = customerService.find(pk);
+
+        List<String> mandatoryFields = getMandatoryFields(fields);
+        return ResponseEntity.ok(partialResponse(customer, mandatoryFields));
     }
 
     @PutMapping("/v1/customers/{id}")
@@ -78,5 +96,9 @@ public class CustomerResource {
     public ResponseEntity<Void> deleteCustomer(@PathVariable("id") Long pk) {
         customerService.delete(pk);
         return ResponseEntity.ok().build();
+    }
+
+    private List<String> getMandatoryFields(String fields) {
+        return fields == null ? Collections.emptyList() : Arrays.asList(fields.split(","));
     }
 }
